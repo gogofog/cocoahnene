@@ -1,0 +1,42 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: pip install customtkinter pillow pyinstaller
+
+      - name: Make icon
+        run: python Wexxyytweaker_v3.py --make-icon
+
+      - name: Build exe
+        run: >
+          pyinstaller --noconfirm --onefile --windowed --uac-admin
+          --name WexxyyTweaker --icon W.ico --add-data "W.ico;."
+          --collect-all customtkinter Wexxyytweaker_v3.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WexxyyTweaker
+          path: dist/WexxyyTweaker.exe
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/WexxyyTweaker.exe
